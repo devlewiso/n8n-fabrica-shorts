@@ -6,7 +6,7 @@ Un workflow de n8n que hace un **YouTube Short de principio a fin, solo**: elige
 - **Salida:** 720×1280, ~28 s, voz en español con subtítulos quemados.
 - **Plantilla:** canal de motos, pero cambiás la lista de temas y el prompt del director y sirve para cualquier nicho.
 
-📺 Tutorial completo (8 min): _próximamente en YouTube_
+📺 **Tutorial completo (8 min):** https://youtu.be/xv_s1UJoszE
 
 ## Qué hay en el repo
 | Archivo | Para qué |
