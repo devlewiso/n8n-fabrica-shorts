@@ -1,0 +1,6 @@
+tools/ffmpeg
+tools/ffprobe
+tools/fonts/
+tools/tiktok/
+videos/
+.env

@@ -1,0 +1,21 @@
+# n8n listo para la Fábrica de Shorts. Copiá este archivo como docker-compose.yml y corré: docker compose up -d
+services:
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_RESTRICT_FILE_ACCESS_TO=/files
+      # n8n 2.x apaga «Execute Command» por defecto; la fábrica lo necesita para ffmpeg y burn.js
+      - NODES_EXCLUDE=["n8n-nodes-base.localFileTrigger"]
+      - GENERIC_TIMEZONE=America/Mexico_City
+      - TZ=America/Mexico_City
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./videos:/files          # tomas, voz y videos finales (se crea final/ adentro)
+      - ./tools:/opt/tools:ro    # burn.js, ffmpeg, ffprobe y fonts/
+      - ./tools/tiktok:/opt/tools/tiktok   # solo si usás TikTok (app.json y token.json)
+volumes:
+  n8n_data:

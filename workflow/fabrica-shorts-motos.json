@@ -1,0 +1,1403 @@
+{
+  "name": "Fábrica de Shorts con IA · n8n + Kie (plantilla motos)",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -32,
+        -400
+      ],
+      "id": "1519abe7-8986-4dc2-a084-0e283c7fe8cb",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "daysInterval": 4,
+              "triggerAtHour": 11
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -32,
+        -240
+      ],
+      "id": "8c294f41-938b-41c7-9837-f16d50d1c527",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        240,
+        -112
+      ],
+      "id": "4ac56f19-123d-404d-9883-afdb1015e59c",
+      "name": "Leer Historial",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Brief del día para el canal de motos: categoría y formato al azar (sin repetir los recientes),\n// origen/época sugerido y la lista de temas ya hechos (tabla motos_historial).\n// Lo que ya funciona en el canal: motos de entrada y, sobre todo, la Yamaha MT-03 (escape, accesorios, comparativas).\nconst CENTRO = [\n  'Yamaha MT-03: datos y verdades', 'MT-03 vs sus rivales (R3, Ninja 400, Duke 390, CB500F)',\n  'Motos de entrada de 250 a 500 cc: qué elegir', 'Escapes y sonido: qué cambia de verdad',\n  'Accesorios y mods útiles para motos de entrada', 'Consumo, costos y mantenimiento real de una moto de entrada',\n];\nconst GENERAL = [\n  'Récords de velocidad', 'Historia de marcas legendarias', 'Motos icónicas de la historia', 'Competición (MotoGP, Dakar, Superbike)',\n  'Inventos y hitos técnicos', 'Motor y transmisión', 'Frenos y suspensión', 'Electrónica y seguridad (ABS, control de tracción)',\n  'Motos eléctricas y tecnología nueva', 'Mitos de mantenimiento', 'Errores comunes al manejar', 'Combustible, aceite y neumáticos',\n  '2 tiempos vs 4 tiempos', 'Clásicas vs modernas', 'Scooters vs motos de cambios', 'Off-road vs calle', 'Café racer y motos custom',\n];\nconst CATEGORIAS = CENTRO.concat(GENERAL);\nconst FORMATOS = [\n  'dato curioso poco conocido', 'mito vs realidad', 'cómo funciona, explicado simple', 'comparación cara a cara',\n  'historia con un giro sorprendente', 'error común que casi todos cometen', 'récord increíble',\n];\nconst ORIGENES = [\n  'Japón', 'Italia', 'Reino Unido', 'Estados Unidos', 'Alemania', 'India', 'Austria', 'España', 'Latinoamérica',\n  'años 50 y 60', 'años 70', 'años 80', 'años 90', 'época actual',\n];\n\n// 100 temas concretos, agrupados por categoría. Se recorren en orden intercalado\n// (un tema de cada grupo por vuelta) y avanza uno por cada video del historial,\n// así no se repiten hasta agotar la lista y el canal alterna entre lo que ya rinde y lo general.\nconst TEMAS = {\n  'Yamaha MT-03: datos y verdades': [\n    'Por qué la MT-03 comparte motor con la R3 y qué cambia entre las dos',\n    'El motor bicilíndrico de 321 cc de la MT-03: por qué se siente más grande de lo que es',\n    'La MT-03 en ciudad: calor del motor, tráfico y cómo manejarlo',\n    'Qué revisar al comprar una MT-03 usada',\n    'MT-03 con pasajero: qué cambia en frenos, suspensión y postura',\n    'Los primeros 1000 km de una MT-03 nueva: el asentamiento bien hecho',\n    'MT-03 en carretera: hasta dónde es cómoda de verdad',\n    'La cara de la MT-03: por qué Yamaha diseñó así las luces',\n    'Cuánto aguanta el motor de una MT-03 si se cuida bien',\n    'Qué significa \"Dark Side of Japan\", el lema de la familia MT',\n    'MT-03 para gente bajita: altura del asiento y trucos para llegar al suelo',\n    'Las versiones de la MT-03 a lo largo de los años: qué cambió en cada una',\n    'La familia MT: de la MT-03 a la MT-10, qué tienen en común',\n  ],\n  'MT-03 vs sus rivales (R3, Ninja 400, Duke 390, CB500F)': [\n    'MT-03 vs Kawasaki Z400: el duelo de las naked de entrada',\n    'MT-03 vs KTM 390 Duke: bicilíndrico suave contra monocilíndrico rabioso',\n    'MT-03 vs Honda CB500F: ¿vale la pena subir a 500 cc?',\n    'MT-03 vs Yamaha R3: la misma moto con dos personalidades',\n    'MT-03 vs Kawasaki Ninja 400: postura, peso y potencia',\n    'MT-03 vs BMW G 310 R: japonesa contra alemana hecha en India',\n    'MT-03 vs Suzuki GSX-S 250 / Gixxer 250: qué gana cada una',\n    'MT-03 vs Royal Enfield Interceptor 650: modernidad contra carácter clásico',\n    'MT-03 vs CFMoto 300NK: ¿la china ya alcanzó a la japonesa?',\n    'MT-03 vs Bajaj Dominar 400: la rival que más se ve en Latinoamérica',\n    'Monocilíndrico vs bicilíndrico en motos de 300 a 400 cc',\n    'Naked vs deportiva carenada: cuál conviene como primera moto grande',\n  ],\n  'Motos de entrada de 250 a 500 cc: qué elegir': [\n    'La mejor primera moto grande según tu estatura',\n    'Moto nueva de 300 cc vs usada de 600 cc: qué conviene de verdad',\n    'Por qué casi todas las motos de entrada tienen alrededor de 40 caballos',\n    'Qué significan los caballos y el torque en una moto de entrada',\n    'Cuánto pesa de verdad una moto y por qué importa más que la potencia',\n    'ABS en una moto de entrada: por qué ya no es opcional',\n    'Motos de entrada para viajar: qué buscar',\n    'Las motos de 250 a 500 cc más vendidas en Latinoamérica',\n    'Cómo saber si ya estás listo para pasar a una moto más grande',\n    'Moto de entrada para mujeres y pilotos ligeros: peso y altura',\n    'Motos de entrada de India y China: cómo cambiaron el mercado',\n    'Qué moto de entrada aguanta mejor los baches y topes de la ciudad',\n  ],\n  'Escapes y sonido: qué cambia de verdad': [\n    'Escape full system vs slip-on: qué cambia de verdad',\n    '¿Un escape aftermarket da más potencia? Mito vs realidad',\n    'Por qué quitarle el catalizador a una moto moderna es mala idea',\n    'El \"pop\" y las explosiones del escape: de dónde salen',\n    'Por qué algunos escapes necesitan reprogramar la ECU',\n    'Escapes de titanio, acero o carbono: qué cambia además del precio',\n    'Cómo el escape cambia el sonido de un bicilíndrico como el de la MT-03',\n    'Qué son los dB killer y por qué conviene no quitarlos',\n    'Escape ruidoso: multas y límites de ruido en Latinoamérica',\n    'Qué escape elegir para una MT-03: slip-on, full o dejar el original',\n  ],\n  'Accesorios y mods útiles para motos de entrada': [\n    'Los 5 accesorios que primero debería llevar una moto de entrada',\n    'Sliders y protectores de motor: qué salvan en una caída',\n    'Parabrisas en una naked: ¿ayuda o estorba?',\n    'Luces LED auxiliares: cuándo ayudan y cuándo son ilegales',\n    'Portacelular en la moto: el riesgo de las vibraciones para la cámara',\n    'Maletas laterales, top case o mochila: qué conviene',\n    'Qué ofrece un quickshifter y si vale la pena en 300 cc',\n    'Manetas regulables: el mod barato que cambia el control',\n    'Retirar el porta placa (tail tidy): estética contra legalidad',\n    'Intercomunicador en el casco: cómo funciona y qué buscar',\n    'Neumáticos deportivos vs de turismo en una moto de entrada',\n  ],\n  'Consumo, costos y mantenimiento real de una moto de entrada': [\n    'Cuánto consume de verdad una moto de 300 cc',\n    'Cada cuánto cambiar el aceite de una moto de entrada',\n    'Cómo tensar y lubricar la cadena correctamente',\n    'Presión de llantas: el error más común de los motociclistas',\n    'Cuánto cuesta mantener una moto de 300 cc al año',\n    'Aceite mineral, semisintético o sintético: cuál usar',\n    'Cuándo cambiar las pastillas de freno',\n    'Por qué la batería de la moto se descarga si no la usas',\n    'Cómo guardar la moto varias semanas sin dañarla',\n    'Lavar la moto sin arruinarla: errores comunes',\n    'Qué es el service de los 10 000 km y qué incluye',\n  ],\n  'Récords de velocidad': [\n    'La moto de producción más rápida del mundo',\n    'El pacto de caballeros de las 300 km/h y la Suzuki Hayabusa',\n    'La moto más rápida jamás construida',\n    'El récord de velocidad de las motos eléctricas',\n  ],\n  'Historia de marcas legendarias': [\n    'Cómo una fábrica de pianos terminó haciendo motos: la historia de Yamaha',\n    'Honda: de motor para bicicleta a gigante mundial',\n    'KTM: de taller austríaco a campeona del Dakar',\n    'Royal Enfield: la marca de motos más antigua aún en producción',\n    'Kawasaki y su color verde: de la mala suerte a la identidad',\n  ],\n  'Motos icónicas de la historia': [\n    'La Honda Super Cub: la moto más vendida de la historia',\n    'La Honda CB750: la moto que inventó la superbike moderna',\n    'La Yamaha RD350: la 2 tiempos que asustaba a motos más grandes',\n    'La Ducati Monster: la naked que salvó a Ducati',\n    'La Yamaha RX 100 y las 2 tiempos que marcaron a Latinoamérica',\n  ],\n  'Competición (MotoGP, Dakar, Superbike)': [\n    'Cómo se inclina un piloto de MotoGP a más de 60 grados',\n    'Qué es el ride height device de MotoGP',\n    'El Dakar en moto: la carrera más dura del mundo',\n    'Por qué las motos de MotoGP no tienen matrícula ni ABS',\n  ],\n  'Motor y transmisión': [\n    'Por qué el cigüeñal a 270° cambia el sonido y el carácter de un bicilíndrico',\n    'El embrague antirrebote (slipper clutch) explicado simple',\n    'Motor refrigerado por aire vs por líquido',\n    'Qué es la inyección electrónica y por qué desaparecieron los carburadores',\n  ],\n  'Frenos y suspensión': [\n    'Horquilla invertida vs convencional: qué cambia de verdad',\n    'Frenar con el freno delantero: por qué es el que más frena',\n    'Cómo ajustar la precarga del amortiguador trasero',\n  ],\n  'Electrónica y seguridad (ABS, control de tracción)': [\n    'Cómo funciona el ABS de una moto, explicado simple',\n    'Control de tracción: qué hace y cuándo entra',\n    'Qué es una IMU y por qué las motos modernas \"saben\" que están inclinadas',\n  ],\n  'Motos eléctricas y tecnología nueva': [\n    'Motos eléctricas de entrada: ¿ya reemplazan a una de 300 cc?',\n    'Cuánto cuesta cargar una moto eléctrica comparado con la gasolina',\n  ],\n  'Errores comunes al manejar': [\n    'Mirar hacia donde quieres ir: el truco para tomar curvas',\n    'El contramanillar: cómo gira de verdad una moto',\n    'Por qué no se debe frenar dentro de una curva cerrada',\n    'Manejar bajo lluvia: los errores que causan caídas',\n  ],\n};\n\nconst ORDEN = (() => {\n  const grupos = Object.entries(TEMAS).map(([cat, lista]) => lista.map(tema => ({ cat, tema })));\n  const out = [];\n  for (let i = 0; grupos.some(g => g.length > i); i++) {\n    for (const g of grupos) if (g[i]) out.push(g[i]);\n  }\n  return out;\n})();\n\nconst rows = $input.all().map(i => i.json).filter(r => r && r.tema);\nrows.sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));\n\nconst pick = (list, recientes) => {\n  const libres = list.filter(x => !recientes.includes(x));\n  const pool = libres.length ? libres : list;\n  return pool[Math.floor(Math.random() * pool.length)];\n};\n\nreturn [{\n  json: {\n    fecha: new Date().toLocaleDateString('en-CA'),\n    semilla: Math.floor(Math.random() * 1000000),\n    // 50 % del tiempo se apunta a lo que ya rinde en el canal; el resto explora\n    // el tema del día sale de la lista rotativa (uno nuevo por cada video del historial)\n    categoria: ORDEN[rows.length % ORDEN.length].cat,\n    tema: ORDEN[rows.length % ORDEN.length].tema,\n    formato: pick(FORMATOS, rows.slice(-3).map(r => r.formato)),\n    origen: pick(ORIGENES, []),\n    total: rows.length,\n    usadas: rows.length ? rows.map(r => r.tema).join(' | ') : '(ninguno todavía)',\n  },\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        496,
+        -112
+      ],
+      "id": "1c914f04-6c1b-4271-844a-be958ab2cb41",
+      "name": "Preparar Brief"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Genera el Short de motos de hoy.\nFecha: {{ $json.fecha }} | Semilla: {{ $json.semilla }}\nCATEGORÍA OBLIGATORIA de hoy: {{ $json.categoria }}\nTEMA DEL DÍA (obligatorio; tus 5 candidatos son 5 ángulos distintos de este tema, y verifica cada dato antes de afirmarlo): {{ $json.tema }}\nFORMATO obligatorio: {{ $json.formato }}\nORIGEN O ÉPOCA sugerida (prefiere temas de aquí si encajan): {{ $json.origen }}\nTEMAS YA HECHOS (prohibido repetirlos o casi repetirlos): {{ $json.usadas }}\nLARGO DE LA NARRACIÓN: entre 46 y 54 palabras en español (unos 290 a 330 caracteres; cuéntalas).",
+        "hasOutputParser": true,
+        "needsFallback": true,
+        "options": {
+          "systemMessage": "Eres el guionista y director de contenido de un canal de YouTube Shorts sobre motos. Cada ejecución produces UN Short vertical de 30 segundos que enseña o revela algo interesante sobre motos, con tono entusiasta, cercano y preciso.\n\nPÚBLICO: hombres de 25 a 44 años de Latinoamérica (México, Guatemala, Brasil...) a los que les interesan las motos de entrada y deportivas de 250 a 500 cc, sobre todo la Yamaha MT-03, sus escapes, accesorios y comparativas. Lo que ya funciona en el canal son los videos de una moto concreta (por ejemplo la MT-03), no las curiosidades generales.\n\nIDIOMA: todo lo que ve o escucha el público va en español latinoamericano neutro (título, descripción, hashtags y narración). El prompt de video va en inglés, para el generador. dato_central y fuente_confianza van en español, para revisión interna.\n\nREGLAS:\n- Un solo tema por video. Estructura: gancho en los primeros 3 s, explicación clara en la parte media, cierre memorable.\n- Precisión: usa datos verificables (fechas, cilindrada, potencia, récords). No inventes cifras. Si dudas, redacta en aproximado (\"cerca de\") o elige otro tema. Los consejos de mantenimiento o seguridad deben ser conservadores; si depende del modelo, remite al manual.\n- No hables en primera persona ni inventes experiencias (\"yo la probé\", \"en mi moto\"). Sin afirmaciones falsas sobre sonido real de una moto concreta: el video es generado y su sonido es ambiental.\n- Seguridad: nada que promueva conducción temeraria (exceso de velocidad, acrobacias en vía pública, ir sin casco). En el video los pilotos siempre llevan casco y equipo de protección.\n- Video: estilo cinematográfico realista. Describe la moto por tipo, época y color (por ejemplo \"a blue naked sport bike, 300 cc class\"); sin logos, sin nombres de marca en pantalla, sin placas legibles ni texto en imagen. Puedes nombrar marcas y modelos en la narración.\n- Audio del video: solo ambiente y sonido natural de la moto, sin música ni voz. La narración se añade aparte.\n\nDIRECCIÓN DE FOTOGRAFÍA Y STORYBOARD (piensas como director de comerciales de motos de alta gama):\n- referencia_visual: ficha fija de la moto en inglés, máximo 250 caracteres: tipo, clase de cilindrada, época, colores y acabados EXACTOS, ruedas, escape, faros y formas distintivas. Sin logos ni texto. Si hay piloto: colores del casco y del equipo.\n- referencia_escenario: UN párrafo en inglés, máximo 250 caracteres, con UNA sola locación para las 3 tomas (ruta, taller, estacionamiento, puerto de montaña…): superficie, entorno, clima, hora, dirección de la luz y paleta.\n- storyboard: EXACTAMENTE 3 tomas de 10 s que cuentan el tema (toma 1: gancho y presentación de la moto; toma 2: demostración o detalle que explica el dato central; toma 3: cierre memorable que enlaza con el gancho). El video final dura 28 s.\n- Cada toma tiene encuadre, ángulo y posición de la moto DISTINTOS. Progresión: plano general (moto en su entorno) → plano medio o de acción → detalle de una pieza reconocible (de frente o de lado).\n- Cortes orgánicos: alterna planos y ángulos en cada toma (general, medio, detalle de escape/tablero/rueda/motor, contraplano, travelling lateral, primer plano del piloto con casco). Nunca dos tomas seguidas con el mismo encuadre.\n- keyframe: el PRIMER FOTOGRAMA exacto de la toma como foto fija: tipo de plano y lente, altura y ángulo de cámara, dónde está la moto en el cuadro y hacia dónde apunta, qué pasa en ese instante, luz. Máximo 300 caracteres (keyframe) / 250 (movimiento). El sistema antepone la ficha y la locación a cada toma, no las repitas.\n- movimiento: lo que pasa en los 10 s: UNA acción simple y lenta (la moto avanza recta a velocidad moderada, se detiene, el piloto gira la cabeza, la cámara recorre un detalle), cámara lenta y continua, sonido natural concreto. La toma 3 termina casi quieta.\n- Continuidad: misma luz, clima y dirección de avance de la moto en pantalla en las 3 tomas (regla de los 180°).\n- narracion de cada toma: la parte exacta de la narración que suena en ese tramo; las 3 juntas forman el campo narracion completo.\n\nCOREOGRAFÍA SEGURA PARA IA (obligatorio, Grok falla con movimientos complejos: piezas que se funden, ruedas que se deforman, cuerpos fantasma):\n- Una sola acción simple por toma, con la moto siempre apoyada en el suelo y avanzando en UNA dirección constante de pantalla.\n- Prohibido: giros en U, derrapes, caballitos, saltos, vueltas completas de cámara alrededor de la moto, otra moto o vehículo cruzando por delante, y manos o piezas que entran y salen del encuadre.\n- Si hay piloto: siempre sentado, con casco, las dos manos en el manillar y los pies en los estribos o en el suelo al detenerse.\n- La toma 3 termina casi estática: la moto se detiene o queda estacionada y la cámara se queda quieta o hace un push-in lento a un detalle.\n- Cámara con movimientos lentos y continuos; nada de cortes, transiciones ni fundidos dentro del prompt.\n\nSIMPLICIDAD PARA IA (obligatorio, Grok 480p deforma lo complejo):\n- Cada toma describe UNA sola cosa clara: la moto entera, o UNA pieza reconocible, con UNA acción lenta.\n- Piloto SOLO en planos generales y medios (tomas 1 y 2). En primeros planos y detalles NO aparece el piloto ni partes de su cuerpo.\n- Detalles permitidos, siempre vistos de frente o de lado y bien iluminados: faro delantero de frente, rueda delantera con disco de freno de lado, tanque de lado, escape de lado, tablero desde el punto de vista del piloto, motor de lado. PROHIBIDO: planos en picado o cenitales, piezas cortadas en ángulos raros, mezclar cuerpo del piloto con piezas.\n- keyframe: máximo 300 caracteres. movimiento: máximo 250 caracteres. referencia_visual: máximo 250 caracteres. referencia_escenario: máximo 220 caracteres. Frases cortas y concretas, sin adjetivos de relleno.\n\nNARRACIÓN (campo narracion): el guion en español que se leerá en voz alta sobre el video de 30 s. Entre 46 y 54 palabras (unos 290 a 330 caracteres), texto plano en un solo párrafo, frases cortas. La primera frase es el gancho; el dato central va en la parte media; cierra con una frase memorable o una pregunta que invite a comentar. Sin acotaciones ni emojis, y con las cifras escritas como se dicen en voz alta. Debe coincidir con lo que se ve en cada toma del storyboard. La descripción invita a suscribirse y a comentar.\n\nORIGINALIDAD: cada video debe ser distinto a los anteriores. Respeta la CATEGORÍA y el FORMATO que te dan y no repitas ni casi repitas ningún tema de la lista de ya hechos. Antes de responder piensa 5 candidatos distintos (tema + ángulo), puntúa cada uno de 1 a 10 en novedad (10 = casi nadie ha hecho videos cortos sobre eso) y elige uno con novedad de 6 o más y datos verificables. Escribe los candidatos en `candidatos` y la puntuación del elegido en `novedad`. Los temas populares sobre motos de entrada están bien si el ángulo es nuevo."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        800,
+        -112
+      ],
+      "id": "9687285f-6ab7-4c0b-a50c-c2827c488587",
+      "name": "Director de Cine (motos)",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "model": "deepseek-v4.1-flash:cloud",
+        "options": {
+          "think": false,
+          "numCtx": 16384,
+          "numPredict": 8000,
+          "format": "json"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        800,
+        304
+      ],
+      "id": "86fdce81-aa82-4087-b592-f3e489384c46",
+      "name": "DeepSeek Flash · guion",
+      "credentials": {
+        "ollamaApi": {
+          "name": "Ollama"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"candidatos\": {\n      \"type\": \"array\",\n      \"minItems\": 4,\n      \"maxItems\": 6,\n      \"description\": \"5 candidate topics considered before choosing\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"tema\": {\n            \"type\": \"string\"\n          },\n          \"gancho\": {\n            \"type\": \"string\",\n            \"description\": \"angle in one line, in Spanish\"\n          },\n          \"novedad\": {\n            \"type\": \"integer\",\n            \"minimum\": 1,\n            \"maximum\": 10\n          },\n          \"verificable\": {\n            \"type\": \"boolean\"\n          }\n        },\n        \"required\": [\n          \"tema\",\n          \"gancho\",\n          \"novedad\",\n          \"verificable\"\n        ]\n      }\n    },\n    \"novedad\": {\n      \"type\": \"integer\",\n      \"minimum\": 6,\n      \"maximum\": 10,\n      \"description\": \"Originality score of the CHOSEN topic (6-10)\"\n    },\n    \"tema\": {\n      \"type\": \"string\",\n      \"description\": \"Short name of the chosen topic in Spanish, e.g. 'Cómo funciona el ABS en una moto'\"\n    },\n    \"dato_central\": {\n      \"type\": \"string\",\n      \"description\": \"El dato o idea central del video, en español\"\n    },\n    \"fuente_confianza\": {\n      \"type\": \"string\",\n      \"description\": \"Respaldo verificable del dato (manual, fabricante, organismo, historia documentada)\"\n    },\n    \"titulo\": {\n      \"type\": \"string\",\n      \"description\": \"Título en español con gancho, máx. 80 caracteres\"\n    },\n    \"descripcion\": {\n      \"type\": \"string\",\n      \"description\": \"Descripción en español, 2-3 líneas, invita a suscribirse y a comentar\"\n    },\n    \"hashtags\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\"\n      },\n      \"description\": \"Hashtags en español o de moto, cada uno empieza con #\"\n    },\n    \"narracion\": {\n      \"type\": \"string\",\n      \"minLength\": 240,\n      \"maxLength\": 390,\n      \"description\": \"Narración en español para leer en voz alta sobre el video de 30 s: 46-58 palabras (290-370 caracteres; nunca más de 390), un solo párrafo, primera frase es el gancho, cifras escritas como se dicen.\"\n    },\n    \"referencia_visual\": {\n      \"type\": \"string\",\n      \"description\": \"English identity card of the motorcycle, max 250 characters, repeated at the start of every shot: type (naked, sport, scrambler…), cc class and era, exact colors and finish, wheels, exhaust, lights, distinctive shapes. No brand logos or text. If there is a rider: helmet and gear colors.\"\n    },\n    \"referencia_escenario\": {\n      \"type\": \"string\",\n      \"description\": \"ONE English paragraph, max 220 characters: the single location used in all 3 shots (road, workshop, parking, mountain pass…), surface, surroundings, weather, time of day, light direction and palette.\"\n    },\n    \"storyboard\": {\n      \"type\": \"array\",\n      \"minItems\": 3,\n      \"maxItems\": 3,\n      \"description\": \"3 shots of 10 s each, planned like a motorcycle commercial cinematographer. Every shot has a DIFFERENT framing, camera angle and position of the bike in frame. Alternate framings so the edit feels organic.\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"plano\": {\n            \"type\": \"string\",\n            \"description\": \"Shot type and lens in English, e.g. \\\"wide establishing, 200mm telephoto, eye level\\\"\"\n          },\n          \"keyframe\": {\n            \"type\": \"string\",\n            \"description\": \"English, max 300 characters: the exact FIRST FRAME of the shot as a still photo: framing, camera height and angle, where the animal is in frame (left/right/center, near/far), its exact pose and body orientation, what it is doing at that instant, light and depth of field.\"\n          },\n          \"movimiento\": {\n            \"type\": \"string\",\n            \"description\": \"English, max 250 characters: what happens in the 10 s starting from that first frame: 1-2 simple physical actions in one screen direction, camera move (slow and continuous), and concrete natural SFX. Shot 3 ends calm and nearly still.\"\n          },\n          \"narracion\": {\n            \"type\": \"string\",\n            \"description\": \"The exact part of the narration heard during this shot\"\n          }\n        },\n        \"required\": [\n          \"plano\",\n          \"keyframe\",\n          \"movimiento\",\n          \"narracion\"\n        ]\n      }\n    }\n  },\n  \"required\": [\n    \"candidatos\",\n    \"novedad\",\n    \"tema\",\n    \"dato_central\",\n    \"fuente_confianza\",\n    \"titulo\",\n    \"descripcion\",\n    \"hashtags\",\n    \"narracion\",\n    \"referencia_visual\",\n    \"referencia_escenario\",\n    \"storyboard\"\n  ]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        992,
+        112
+      ],
+      "id": "6ebfd0b9-f1a3-4f8a-a7b1-358b511d984b",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Corta la ejecución ANTES de gastar en Kie si el tema se repite (o casi) o la salida es inservible.\nconst brief = $('Preparar Brief').first().json;\nconst out = $input.first().json.output || {};\n\nconst norm = s => String(s || '').toLowerCase()\n  .normalize('NFD').replace(/[̀-ͯ]/g, '')\n  .replace(/[^a-z0-9 ]/g, ' ').replace(/\\s+/g, ' ').trim();\nconst STOP = new Set(['de', 'la', 'el', 'los', 'las', 'un', 'una', 'y', 'en', 'del', 'que', 'por', 'con', 'para', 'a', 'al', 'vs', 'como', 'es', 'su']);\nconst tokens = s => new Set(norm(s).split(' ').filter(w => w.length > 2 && !STOP.has(w)));\nconst jaccard = (a, b) => {\n  const A = tokens(a), B = tokens(b);\n  if (!A.size || !B.size) return 0;\n  let inter = 0;\n  for (const x of A) if (B.has(x)) inter++;\n  return inter / (A.size + B.size - inter);\n};\n\nif (!out.tema || !out.narracion || !out.referencia_visual || !out.referencia_escenario || !Array.isArray(out.storyboard) || out.storyboard.length !== 3) {\n  throw new Error('El agente devolvió una salida incompleta (falta tema, narración, fichas, o el storyboard no tiene 3 tomas).');\n}\nout.storyboard.forEach((t, i) => {\n  if (!t || !t.keyframe || !t.movimiento) throw new Error('La toma ' + (i + 1) + ' no tiene keyframe o movimiento.');\n});\n\nconst usadas = brief.usadas === '(ninguno todavía)' ? [] : String(brief.usadas).split(' | ');\nconst repetida = usadas.find(u => norm(u) === norm(out.tema) || jaccard(u, out.tema) >= 0.6);\nif (repetida) {\n  throw new Error('Tema repetido: \"' + out.tema + '\" es casi igual a \"' + repetida + '\". No se gastó nada en Kie; vuelve a ejecutar.');\n}\n\n\n// La voz de Gemini habla español a ~12 caracteres/s: 250-360 caracteres = 21-30 s.\nconst chars = String(out.narracion).trim().length;\nif (chars < 240 || chars > 390) {\n  throw new Error('La narración tiene ' + chars + ' caracteres; debe tener entre 240 y 390 (el montaje acelera la voz hasta 1.25× para que entre en 28 s) (unos 46-54 palabras). No se gastó nada en Kie.');\n}\n\n// Nombre base común para todos los archivos del video: moto_2026-09-20_1100_tema\nconst stamp = new Date().toLocaleString('sv-SE', { hour12: false }).replace(' ', '_').replace(/:/g, '').slice(0, 15);\nconst slug = norm(out.tema).replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 40) || 'video';\nconst base = 'moto_' + stamp + '_' + slug;\n\nreturn $input.all().map(i => ({ json: { ...i.json, base } }));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        -112
+      ],
+      "id": "bd2515d5-94be-49c8-a056-20a460974b1e",
+      "name": "Validar Nuevo"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "fecha": "={{ $('Preparar Brief').first().json.fecha }}",
+            "tema": "={{ $('Director de Cine (motos)').first().json.output.tema }}",
+            "titulo": "={{ $('Director de Cine (motos)').first().json.output.titulo }}",
+            "categoria": "={{ $('Preparar Brief').first().json.categoria }}",
+            "formato": "={{ $('Preparar Brief').first().json.formato }}",
+            "dato_central": "={{ $('Director de Cine (motos)').first().json.output.dato_central }}",
+            "costo_usd": "0.37",
+            "modelo": "kie grok-imagine/text-to-video 480p 3x10s + kie gemini-2.5-pro-tts"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "fecha",
+              "displayName": "fecha",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "tema",
+              "displayName": "tema",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "titulo",
+              "displayName": "titulo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "categoria",
+              "displayName": "categoria",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "formato",
+              "displayName": "formato",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "dato_central",
+              "displayName": "dato_central",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "costo_usd",
+              "displayName": "costo_usd",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "modelo",
+              "displayName": "modelo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -80,
+        528
+      ],
+      "id": "06cace18-d275-4a5d-b88f-eb30acb28647",
+      "name": "Guardar Historial"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "={{ '/files/' + $('Validar Nuevo').first().json.base + '_narr.wav' }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        1696,
+        512
+      ],
+      "id": "92a87a9f-dfe5-4ea9-bde8-44aac152d1f6",
+      "name": "Save Voice"
+    },
+    {
+      "parameters": {
+        "jsCode": "const v = $('Validar Nuevo').first().json;\nconst b64 = Buffer.from(String(v.output.narracion), 'utf8').toString('base64');\nreturn [{ json: { base: v.base, command: 'node /opt/tools/burn.js ' + v.base + ' ' + b64 } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1888,
+        512
+      ],
+      "id": "791a9bb3-9efa-45b1-b924-89eead8bb623",
+      "name": "Preparar Montaje"
+    },
+    {
+      "parameters": {
+        "command": "={{ $json.command }}"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        2160,
+        512
+      ],
+      "id": "ef2ac610-f3c5-41b8-93ea-2ffd14468a59",
+      "name": "Montar Video"
+    },
+    {
+      "parameters": {
+        "jsCode": "const r = $input.first().json;\nlet out;\ntry { out = JSON.parse(String(r.stdout || '').trim().split('\\n').pop()); }\ncatch (e) { throw new Error('El montaje no devolvió una respuesta válida: ' + String(r.stderr || r.stdout || '').slice(-400)); }\nif (!out.ok) throw new Error('Falló el montaje: ' + out.error);\nreturn [{ json: out }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2416,
+        512
+      ],
+      "id": "89736589-af4b-4783-8ef2-5a5b4121a4db",
+      "name": "Resultado Montaje"
+    },
+    {
+      "parameters": {
+        "fileSelector": "={{ '/files/final/' + $('Validar Nuevo').first().json.base + '_final.mp4' }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        2672,
+        512
+      ],
+      "id": "066fa6d8-aeca-442b-8e50-5a533342fe5a",
+      "name": "Leer Final"
+    },
+    {
+      "parameters": {
+        "resource": "video",
+        "operation": "upload",
+        "title": "={{ $('Director de Cine (motos)').first().json.output.titulo.slice(0, 88) + ' #Shorts' }}",
+        "regionCode": "={{ $('⚙️ Configuración').first().json.region_youtube }}",
+        "categoryId": "={{ $('⚙️ Configuración').first().json.categoria_youtube }}",
+        "options": {
+          "defaultLanguage": "={{ $('⚙️ Configuración').first().json.idioma }}",
+          "description": "={{ [$('Director de Cine (motos)').first().json.output.descripcion, $('⚙️ Configuración').first().json.texto_extra_descripcion, $('Director de Cine (motos)').first().json.output.hashtags.join(' ') + ' #Shorts'].filter(Boolean).join('\\n\\n') }}",
+          "embeddable": true,
+          "notifySubscribers": true,
+          "privacyStatus": "={{ $('⚙️ Configuración').first().json.privacidad }}",
+          "selfDeclaredMadeForKids": false,
+          "tags": "={{ $('Director de Cine (motos)').first().json.output.hashtags.map(h => h.replace('#', '')).join(',') }}"
+        }
+      },
+      "type": "n8n-nodes-base.youTube",
+      "typeVersion": 1,
+      "position": [
+        2928,
+        512
+      ],
+      "id": "403f62aa-9a76-42b2-8a5c-08acc18c6ec2",
+      "name": "Upload a video",
+      "credentials": {
+        "youTubeOAuth2Api": {
+          "name": "YouTube (OAuth2)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "tema",
+              "keyValue": "={{ $('Director de Cine (motos)').first().json.output.tema }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "youtube_id": "={{ $json.uploadId }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "youtube_id",
+              "displayName": "youtube_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        3200,
+        512
+      ],
+      "id": "a9871bf6-2deb-4bca-a97b-ec5c5b458c32",
+      "name": "Registrar Subida"
+    },
+    {
+      "parameters": {
+        "content": "## Fábrica de Shorts con IA · plantilla de motos\n**Qué hace:** cada 4 días (o a mano) arma un Short vertical de ~28 s y lo sube a YouTube: tema nuevo → guion y storyboard con IA → 3 tomas de video en Kie (Grok 480p) → voz (Gemini TTS en Kie) → subtítulos quemados → YouTube (+ TikTok opcional).\n\n**Antes de correrlo:**\n1. Llená **⚙️ Configuración** (tu canal, voz, idioma, privacidad).\n2. Asigná las credenciales: Kie.ai (Header Auth `Authorization: Bearer <tu key>`), Ollama u OpenRouter, YouTube OAuth2.\n3. Creá una Data Table con las columnas del README y elegila en *Leer Historial*, *Guardar Historial* y *Registrar Subida*.\n4. Montá `burn.js` y ffmpeg en `/opt/tools` y una carpeta en `/files` (ver README).\n5. TikTok viene **desactivado**: activá los 3 nodos cuando tengas `tiktok_post.js` configurado.\n\n**Costo por video:** ~$0.36 de video + ~$0.01 de voz (Kie). El guion con Ollama cloud u OpenRouter free.\n**Cambiar de tema:** editá las listas de *Preparar Brief* y el prompt del *Director de Cine*.\n",
+        "height": 980,
+        "width": 760,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        -1296
+      ],
+      "id": "fb56a40d-a03f-4110-a007-8626249ca16d",
+      "name": "Nota"
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "youTubeOAuth2Api",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        256,
+        -304
+      ],
+      "id": "a422710a-fae2-4600-8349-be1941714541",
+      "name": "Verificar canal",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "youTubeOAuth2Api": {
+          "name": "YouTube (OAuth2)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Frena el workflow ANTES de gastar si la credencial de YouTube no es del canal configurado.\nconst esperado = String($('⚙️ Configuración').first().json.canal_youtube || '').toLowerCase().replace('@', '').trim();\nconst canales = $input.all().flatMap(i => i.json.items || [])\n  .map(c => ({ titulo: c.snippet && c.snippet.title, handle: c.snippet && c.snippet.customUrl }));\nif (!esperado) return [{ json: { canal: canales[0] || null, aviso: 'canal_youtube vacío: no se verificó' } }];\nconst ok = canales.some(c => String(c.handle || '').toLowerCase().replace('@', '') === esperado);\nif (!ok) {\n  const vistos = canales.map(c => (c.titulo || '?') + ' (' + (c.handle || 'sin handle') + ')').join(', ') || 'ninguno (¿falta la credencial?)';\n  throw new Error('La credencial de YouTube no es del canal @' + esperado + '. Canal detectado: ' + vistos + '. No se gastó nada.');\n}\nreturn [{ json: { canal: canales[0] } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        528,
+        -304
+      ],
+      "id": "65bb78b8-ca55-4288-8f56-c150236a5ca6",
+      "name": "Comprobar canal"
+    },
+    {
+      "parameters": {
+        "content": "## 🎬 Modelos de video probados (Kie.ai)\n_Medido el 2026-09-20. Precios de la ficha de cada modelo: 1 crédito = $0.005._\n\n### 🥇 Wan 3.0 (`wan/3-0-video`): el mejor en calidad\n- Resolución: 480P → **480×854** · 720P → **720×1280** · 1080P disponible\n- Precio: 480P $0.04/s · 720P $0.08/s · 1080P $0.16/s\n- **30 s: $1.20 (480P) · $2.40 (720P)**. Máximo 30 s por llamada\n- Calidad: el más fotorrealista y fiel a la especie . Trae audio ambiente real\n- Tiempo: 5 a 13 min\n\n### 💸 Grok Imagine (`grok-imagine/text-to-video`): el más barato\n- Resolución: 480p → **416×752** (se amplía a 720×1280 en el montaje)\n- Precio: 480p $0.012/s · 720p $0.0225/s · 1080p $0.04/s\n- **30 s a 480p: $0.36**. Máximo 30 s por llamada\n- Calidad: aceptable pero más blanda y plana. Con texto en pantalla el texto salió legible pero se duplicó. Trae audio ambiente\n- Tiempo: 2 a 4 min\n\n### Otro probado\n- Seedance 1.5 Pro (720p): nítido, $0.035/s con audio, máximo 12 s por llamada. El sujeto salió poco fiel y el audio casi mudo (-36 dB)\n\n### 🎞 Salida final del montaje (igual en todos)\n- **720×1280 (9:16)**, 30 fps, H.264 (CRF 20) + AAC 160 kbps\n- Tamaño: ~12 a 17 MB por 30 s\n- Subtítulos quemados: Liberation Sans Bold, 3 a 4 palabras por línea\n- Voz: Gemini 2.5 Pro TTS (Charon), WAV 24 kHz mono, ~$0.009 por narración\n- ffmpeg 7.0.2 estático dentro de n8n (`/opt/tools`)",
+        "height": 980,
+        "width": 780,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "id": "97dedffb-97d5-43ab-8d0d-f0d643c1b471",
+      "name": "Nota modelos",
+      "position": [
+        752,
+        -1296
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Caption de TikTok: título + hashtags (máx. 2200 caracteres).\nconst o = $('Director de Cine (motos)').first().json.output;\nconst base = $('Validar Nuevo').first().json.base;\nconst caption = [o.titulo, (o.hashtags || []).join(' ') + ' #motos #moto'].join('\\n\\n').slice(0, 2200);\nconst b64 = Buffer.from(caption, 'utf8').toString('base64');\nreturn [{ json: { base, command: 'node /opt/tools/tiktok_post.js /files/final/' + base + '_final.mp4 ' + b64 } }];\n"
+      },
+      "id": "91804f23-45ca-426d-b468-2dc8ba451f9f",
+      "name": "Preparar TikTok",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3424,
+        512
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "command": "={{ $json.command }}"
+      },
+      "id": "802d2603-fd75-4021-82d4-327a569b76ee",
+      "name": "Publicar TikTok",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        3648,
+        512
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const r = $input.first().json;\nlet out;\ntry { out = JSON.parse(String(r.stdout || '').trim().split('\\n').pop()); }\ncatch (e) { throw new Error('La publicación en TikTok no devolvió una respuesta válida: ' + String(r.stderr || r.stdout || '').slice(-400)); }\nif (!out.ok) throw new Error('Falló la publicación en TikTok: ' + out.error);\nreturn [{ json: out }];\n"
+      },
+      "id": "b5a5cef0-0f60-4d07-8ebe-adb8a890c1af",
+      "name": "Resultado TikTok",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3872,
+        512
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "model": "nvidia/nemotron-3-super-120b-a12b:free",
+        "options": {
+          "maxTokens": 8000,
+          "responseFormat": "json_object",
+          "temperature": 0.7,
+          "timeout": 180000
+        }
+      },
+      "id": "5f053fe0-f01a-4c42-a9e5-ec03c836255e",
+      "name": "Nemotron 3 Super · respaldo (OpenRouter free)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        848,
+        112
+      ],
+      "credentials": {
+        "openRouterApi": {
+          "name": "OpenRouter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Storyboard de 3 tomas → un prompt CORTO por toma para Grok (Kie, texto a video).\n// Grok 480p rinde mejor con 3-4 ideas claras: sujeto, encuadre, una acción y luz. Cada parte se recorta en frase completa.\nconst v = $('Validar Nuevo').first().json;\nconst o = v.output || {};\nconst sb = o.storyboard;\nif (!Array.isArray(sb) || sb.length !== 3) throw new Error('Se esperaban 3 tomas en el storyboard, llegaron ' + (sb ? sb.length : 0));\nconst limpio = s => String(s || '').replace(/@\\S+/g, m => m.replace('@', '')).replace(/\\s+/g, ' ').trim();\n// recorta a `max` caracteres sin partir frases\nconst corto = (s, max) => {\n  s = limpio(s);\n  if (s.length <= max) return s;\n  const cut = s.slice(0, max);\n  const fin = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('; '), cut.lastIndexOf(', '));\n  return (fin > max * 0.5 ? cut.slice(0, fin + 1) : cut).trim();\n};\nconst SOLIDEZ = 'Solid, opaque bike and rider with real mass; round wheels rolling forward; no morphing, no ghosting, no text or logos; natural engine sound only.';\n\nreturn sb.map((t, i) => {\n  const prompt_video = [\n    `Vertical 9:16 photorealistic cinematic motorcycle film shot. ${corto(t.plano, 80)}.`,\n    `Subject: ${corto(o.referencia_visual, 260)}`,\n    `Frame: ${corto(t.keyframe, 320)}`,\n    `Action: ${corto(t.movimiento, 260)}`,\n    `Setting: ${corto(o.referencia_escenario, 220)}`,\n    SOLIDEZ,\n  ].join('\\n');\n  return { json: { base: v.base, sceneIndex: i, prompt_video } };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1296,
+        -112
+      ],
+      "id": "5484ff85-b78b-45c9-9f59-24127f47dabf",
+      "name": "Storyboard → Tomas"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1536,
+        -112
+      ],
+      "id": "fc22c665-50d1-45d8-a638-c9d00059e7e5",
+      "name": "Loop Tomas"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.kie.ai/api/v1/jobs/createTask",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"grok-imagine/text-to-video\",\n  \"input\": {\n    \"prompt\": {{ JSON.stringify($json.prompt_video) }},\n    \"aspect_ratio\": \"9:16\",\n    \"mode\": \"normal\",\n    \"duration\": 10,\n    \"resolution\": \"480p\",\n    \"nsfw_checker\": false\n  }\n}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1792,
+        -96
+      ],
+      "id": "020376d5-22be-4e31-a366-08fdafe3496c",
+      "name": "Crear Toma (Kie)",
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "Kie.ai (Header Auth)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 1,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2016,
+        -96
+      ],
+      "id": "96b2d375-4970-495e-920e-0dabf87f9e8e",
+      "name": "Esperar Toma",
+      "webhookId": "c505f5a9-a483-4d8c-9ca9-54814cab1d2b"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.kie.ai/api/v1/jobs/recordInfo?taskId={{ $('Crear Toma (Kie)').first().json.data.taskId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2240,
+        -96
+      ],
+      "id": "fc41d170-4a97-4998-82d3-6952fe644eda",
+      "name": "Consultar Toma",
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "Kie.ai (Header Auth)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $input.first().json.data || {};\nconst state = d.state;\nif (state === 'fail') throw new Error('Kie reportó un fallo: ' + (d.failMsg || d.failCode || 'sin detalle') + ' (taskId ' + d.taskId + ')');\nif ($runIndex > 150) throw new Error('Tiempo de espera agotado. La tarea ' + d.taskId + ' sigue en estado ' + state + '; puedes reanudar desde el nodo Get.');\nreturn [{ json: { ...$input.first().json, done: state === 'success' } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2432,
+        -96
+      ],
+      "id": "e38fff5c-1d9c-4426-b8f4-451772918470",
+      "name": "Estado Toma"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "99176db5-2388-447f-8fe5-e45c630babfa",
+              "leftValue": "={{ $json.done }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2128,
+        192
+      ],
+      "id": "73330ae8-e794-437b-96e6-6ecf58c584f7",
+      "name": "¿Toma lista?"
+    },
+    {
+      "parameters": {
+        "url": "={{ (r => (typeof r === 'string' ? JSON.parse(r) : r).resultUrls[0])($json.data.resultJson) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          },
+          "timeout": 120000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2496,
+        176
+      ],
+      "id": "078f69ee-f833-421a-b7ba-3aa9a8076ca1",
+      "name": "Descargar Toma",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "={{ '/files/' + $('Storyboard → Tomas').item.json.base + '_' + $('Storyboard → Tomas').item.json.sceneIndex + '.mp4' }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        2768,
+        176
+      ],
+      "id": "81f7a87b-574f-4f06-94e5-c59e73339e9a",
+      "name": "Guardar Toma"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Une las 3 tomas de 10 s. De cada toma se usan los primeros 9.4 s: se descarta el final del clip,\n// que es donde suelen aparecer los errores de Grok. Resultado: 3 × 9.4 s ≈ 28 s, mismo costo (30 s generados).\nconst base = $('Validar Nuevo').first().json.base;\nconst N = 3, SEG = 9.4;\nconst inputs = Array.from({ length: N }, (_, i) => `-i /files/${base}_${i}.mp4`).join(' ');\nconst cortes = Array.from({ length: N }, (_, i) => `[${i}:v]trim=0:${SEG},setpts=PTS-STARTPTS[v${i}]`).join(';');\nconst unir = Array.from({ length: N }, (_, i) => `[v${i}]`).join('') + `concat=n=${N}:v=1:a=0[outv]`;\nconst command = `/opt/tools/ffmpeg -y ${inputs} -filter_complex \"${cortes};${unir}\" -map \"[outv]\" -c:v libx264 -crf 18 -preset veryfast -an /files/${base}.mp4`;\nreturn [{ json: { command, base } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3104,
+        -112
+      ],
+      "id": "5050d822-cf06-48dd-aebe-cd03917f9b46",
+      "name": "Unir Tomas"
+    },
+    {
+      "parameters": {
+        "command": "={{ $json.command }}"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        3328,
+        -112
+      ],
+      "id": "e10e25a0-4f25-470d-9b34-c98af4cb7ad4",
+      "name": "Ejecutar Unión"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0cee6127-2c3f-4b60-bfdd-c4b443f989a9",
+              "name": "canal_youtube",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "a6e91132-0936-49c0-a82b-087649fe2588",
+              "name": "voz",
+              "value": "Charon",
+              "type": "string"
+            },
+            {
+              "id": "8841da01-69cd-41c0-85a7-3d5caef49fb5",
+              "name": "idioma",
+              "value": "es",
+              "type": "string"
+            },
+            {
+              "id": "f1c4dc85-091f-4ad4-b9c8-72be599928e7",
+              "name": "region_youtube",
+              "value": "MX",
+              "type": "string"
+            },
+            {
+              "id": "648a260e-eec7-4103-ba30-88c9451d84b8",
+              "name": "categoria_youtube",
+              "value": "2",
+              "type": "string"
+            },
+            {
+              "id": "e9d61475-e06d-49f5-9cbf-37eb1c695166",
+              "name": "privacidad",
+              "value": "public",
+              "type": "string"
+            },
+            {
+              "id": "76e5d246-0633-4cf1-86e8-c645a7fce82b",
+              "name": "texto_extra_descripcion",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5c26d770-d152-4600-9187-e29a6015b34c",
+      "name": "⚙️ Configuración",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        188,
+        -280
+      ],
+      "notes": "canal_youtube: Handle de tu canal SIN @ (ej. micanal). Si lo dejás vacío no se verifica.\nvoz: Voz de Gemini TTS en Kie: Charon, Fenrir, Puck, Kore, Aoede…\ncategoria_youtube: 2 = Autos y vehículos\nprivacidad: public, unlisted o private\ntexto_extra_descripcion: Se agrega al final de la descripción (tus redes, tu link de afiliado…)",
+      "notesInFlow": false
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.kie.ai/api/v1/jobs/createTask",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"google/gemini-2-5-pro-tts\",\n  \"input\": {\n    \"temperature\": 1,\n    \"scene\": \"Narración entusiasta y clara para un canal de YouTube Shorts sobre motos, grabada en un estudio silencioso.\",\n    \"sample_context\": \"Un narrador latinoamericano explica un dato de motos a aficionados curiosos.\",\n    \"speakers\": [\n      {\n        \"speaker_id\": \"Speaker 1\",\n        \"voice_name\": {{ JSON.stringify($('⚙️ Configuración').first().json.voz) }},\n        \"audio_profile\": \"Un narrador masculino grave, seguro y entusiasta de un canal de motos\",\n        \"style\": \"Empathetic\",\n        \"pace\": \"Natural\",\n        \"accent\": \"Neutral\"\n      }\n    ],\n    \"dialogue_turns\": [\n      {\n        \"speaker_id\": \"Speaker 1\",\n        \"text\": {{ JSON.stringify($('Validar Nuevo').first().json.output.narracion) }}\n      }\n    ]\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        176,
+        528
+      ],
+      "id": "1c92a210-8249-4f86-a7b5-2a0cb18b7d1b",
+      "name": "Crear Voz (Kie)",
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "Kie.ai (Header Auth)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 30
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        396,
+        528
+      ],
+      "id": "3f0141ad-819c-46fb-abe2-7ffdd3b05db0",
+      "name": "Esperar Voz",
+      "webhookId": "b2fb528c-85a5-4683-8ea2-edbc4cc98ad3"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.kie.ai/api/v1/jobs/recordInfo?taskId={{ $('Crear Voz (Kie)').first().json.data.taskId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        616,
+        528
+      ],
+      "id": "c5369918-e273-417b-91d7-54239ecae97c",
+      "name": "Consultar Voz",
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "Kie.ai (Header Auth)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $input.first().json.data || {};\nconst state = d.state;\nif (state === 'fail') throw new Error('Kie reportó un fallo: ' + (d.failMsg || d.failCode || 'sin detalle') + ' (taskId ' + d.taskId + ')');\nif ($runIndex > 20) throw new Error('Tiempo de espera agotado. La tarea ' + d.taskId + ' sigue en estado ' + state + '; puedes reanudar desde el nodo Consultar Voz.');\nreturn [{ json: { ...$input.first().json, done: state === 'success' } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        176,
+        728
+      ],
+      "id": "53a0e57d-328d-4bfe-8a62-165a9b56061b",
+      "name": "Estado Voz"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "79def09c-def4-4aa5-9969-fb164a46640a",
+              "leftValue": "={{ $json.done }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        396,
+        728
+      ],
+      "id": "2e5906d0-f182-42f4-9e54-9772bc217be4",
+      "name": "¿Voz lista?"
+    },
+    {
+      "parameters": {
+        "url": "={{ (r => (typeof r === 'string' ? JSON.parse(r) : r).resultUrls[0])($json.data.resultJson) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        616,
+        728
+      ],
+      "id": "eb7547ef-3316-4013-b98c-572ad2087f85",
+      "name": "Descargar Voz",
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    }
+  ],
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "⚙️ Configuración",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "⚙️ Configuración",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer Historial": {
+      "main": [
+        [
+          {
+            "node": "Preparar Brief",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Brief": {
+      "main": [
+        [
+          {
+            "node": "Director de Cine (motos)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Director de Cine (motos)",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Director de Cine (motos)": {
+      "main": [
+        [
+          {
+            "node": "Validar Nuevo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar Nuevo": {
+      "main": [
+        [
+          {
+            "node": "Storyboard → Tomas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Voice": {
+      "main": [
+        [
+          {
+            "node": "Preparar Montaje",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Montaje": {
+      "main": [
+        [
+          {
+            "node": "Montar Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Video": {
+      "main": [
+        [
+          {
+            "node": "Resultado Montaje",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resultado Montaje": {
+      "main": [
+        [
+          {
+            "node": "Leer Final",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer Final": {
+      "main": [
+        [
+          {
+            "node": "Upload a video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload a video": {
+      "main": [
+        [
+          {
+            "node": "Registrar Subida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardar Historial": {
+      "main": [
+        [
+          {
+            "node": "Crear Voz (Kie)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verificar canal": {
+      "main": [
+        [
+          {
+            "node": "Comprobar canal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Comprobar canal": {
+      "main": [
+        [
+          {
+            "node": "Leer Historial",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar Subida": {
+      "main": [
+        [
+          {
+            "node": "Preparar TikTok",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar TikTok": {
+      "main": [
+        [
+          {
+            "node": "Publicar TikTok",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Publicar TikTok": {
+      "main": [
+        [
+          {
+            "node": "Resultado TikTok",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Flash · guion": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Director de Cine (motos)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Nemotron 3 Super · respaldo (OpenRouter free)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Director de Cine (motos)",
+            "type": "ai_languageModel",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Storyboard → Tomas": {
+      "main": [
+        [
+          {
+            "node": "Loop Tomas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Tomas": {
+      "main": [
+        [
+          {
+            "node": "Unir Tomas",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Crear Toma (Kie)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crear Toma (Kie)": {
+      "main": [
+        [
+          {
+            "node": "Esperar Toma",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Esperar Toma": {
+      "main": [
+        [
+          {
+            "node": "Consultar Toma",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar Toma": {
+      "main": [
+        [
+          {
+            "node": "Estado Toma",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Estado Toma": {
+      "main": [
+        [
+          {
+            "node": "¿Toma lista?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Toma lista?": {
+      "main": [
+        [
+          {
+            "node": "Descargar Toma",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Esperar Toma",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Descargar Toma": {
+      "main": [
+        [
+          {
+            "node": "Guardar Toma",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardar Toma": {
+      "main": [
+        [
+          {
+            "node": "Loop Tomas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Unir Tomas": {
+      "main": [
+        [
+          {
+            "node": "Ejecutar Unión",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ejecutar Unión": {
+      "main": [
+        [
+          {
+            "node": "Guardar Historial",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⚙️ Configuración": {
+      "main": [
+        [
+          {
+            "node": "Verificar canal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crear Voz (Kie)": {
+      "main": [
+        [
+          {
+            "node": "Esperar Voz",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Esperar Voz": {
+      "main": [
+        [
+          {
+            "node": "Consultar Voz",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar Voz": {
+      "main": [
+        [
+          {
+            "node": "Estado Voz",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Estado Voz": {
+      "main": [
+        [
+          {
+            "node": "¿Voz lista?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Voz lista?": {
+      "main": [
+        [
+          {
+            "node": "Descargar Voz",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Esperar Voz",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Descargar Voz": {
+      "main": [
+        [
+          {
+            "node": "Save Voice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}
