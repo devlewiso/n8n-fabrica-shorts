@@ -6,7 +6,7 @@ Un workflow de n8n que hace un **YouTube Short de principio a fin, solo**: elige
 - **Salida:** 720×1280, ~28 s, voz en español con subtítulos quemados.
 - **Plantilla:** canal de motos, pero cambiás la lista de temas y el prompt del director y sirve para cualquier nicho.
 
-📺 Tutorial completo (8 min): _link del video_
+📺 Tutorial completo (8 min): _próximamente en YouTube_
 
 ## Qué hay en el repo
 | Archivo | Para qué |
@@ -28,7 +28,7 @@ Un workflow de n8n que hace un **YouTube Short de principio a fin, solo**: elige
 ## Instalación
 ### 1. n8n
 ```bash
-git clone https://github.com/<tu-usuario>/n8n-fabrica-shorts && cd n8n-fabrica-shorts
+git clone https://github.com/devlewiso/n8n-fabrica-shorts && cd n8n-fabrica-shorts
 cp docker-compose.example.yml docker-compose.yml
 mkdir -p videos/final tools/fonts
 ```
